@@ -1,0 +1,16 @@
+{
+    "id": 1,
+    "name": "NSM Shielded Labs",
+    "start_height": 2731300,
+    "end_height": 2734280,
+    "close_height": 2743918,
+    "submit_url": "/submit/1",
+    "question": "Do you support including the NSM in NU7?",
+    "candidates": [
+        "Yes",
+        "No"
+    ],
+    "cmx": "1714a6aa51c806de2f6e8234bec2a896be565ec29f5634f9bb21e1e4e971cc35",
+    "nf": "39fced249ae2851202d848612363787ce32af9590e17d2d8203e6f5b858d0a8b",
+    "status": "Opened"
+}

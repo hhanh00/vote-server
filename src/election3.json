@@ -1,0 +1,16 @@
+{
+    "id": 3,
+    "name": "Devfund Runoff Poll",
+    "start_height": 2540000,
+    "end_height": 2574200,
+    "close_height": 2576000,
+    "submit_url": "/submit/3",
+    "question": "Which Dev Fund proposal do you prefer?",
+    "candidates": [
+        "Hybrid Deferred Dev Fund: Transitioning to a Non-Direct Funding Model",
+        "Lockbox for Decentralized Grants Allocation (20% Option)"
+    ],
+    "cmx": "233ea22fc2067c7141bb418f6cb71c308933eac205c3d79879c1c6acbed0a357",
+    "nf": "03517198be86743e34ee057d5f41dc97b0a68da7d58eab0fee072af00288d472",
+    "status": "Opened"
+}
