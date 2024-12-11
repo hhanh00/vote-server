@@ -9,5 +9,3 @@ pub fn validate(
     let result = validate_proof(&input, domain, &election)?;
     Ok(result)
 }
-
-

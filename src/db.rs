@@ -69,9 +69,8 @@ pub fn store_ballot(
 
 pub fn get_ballot_bytes(hash: &[u8], pool: &Pool<SqliteConnectionManager>) -> Result<Vec<u8>> {
     let connection = pool.get().unwrap();
-    let ballot_bytes = connection.query_row("SELECT date FROM votes WHERE sig_hash = ?1",
+    let ballot_bytes = connection.query_row("SELECT data FROM votes WHERE sig_hash = ?1",
     [hash], |r| r.get::<_, Vec<u8>>(0)).optional()?;
     let ballot_bytes = ballot_bytes.ok_or(anyhow!("Not found"))?;
     Ok(ballot_bytes)
 }
-
