@@ -9,9 +9,10 @@ pub fn init_elections() -> Result<HashMap<u32, Election>> {
     for entry in fs::read_dir(current_dir)? {
         let e = entry?;
         if let Some(name) = e.file_name().to_str() {
-            if name.ends_with(".json") {
+            if name.ends_with(".vote") {
                 let election_json = fs::File::open(name)?;
                 let v = serde_json::from_reader::<_, Election>(&election_json)?;
+                println!("Election {} loaded", v.name);
                 let id = v.id;
                 elections.insert(id, v);
             }

@@ -3445,6 +3445,7 @@ dependencies = [
  "hex",
  "lazy_static",
  "orchard",
+ "pasta_curves",
  "r2d2",
  "r2d2_sqlite",
  "rocket",
@@ -3820,7 +3821,7 @@ dependencies = [
 [[package]]
 name = "zcash-vote"
 version = "0.1.0"
-source = "git+https://github.com/hhanh00/zcash-vote.git?rev=c2aacb3#c2aacb36144de398f1c6f963596d22b1ab623a88"
+source = "git+https://github.com/hhanh00/zcash-vote.git?rev=6242956#62429567ee3cd8616cab2ba24eb66ee1f835b157"
 dependencies = [
  "anyhow",
  "blake2b_simd",

@@ -5,6 +5,7 @@ use anyhow::Result;
 use clap::Parser;
 use clap_repl::reedline::{DefaultPrompt, DefaultPromptSegment, FileBackedHistory};
 use clap_repl::{ClapEditor, ReadCommandOutput};
+use pasta_curves::group::ff::PrimeField as _;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rocket::http::Method;
@@ -13,10 +14,16 @@ use rocket::{
     response::status::Custom,
     State,
 };
-use std::fs;
-use std::io::Read;
+use rusqlite::Connection;
+use serde_json::Value;
+use zcash_vote::db::{create_tables, store_refdata};
+use zcash_vote::path::{build_nfs_tree, calculate_merkle_paths};
+use zcash_vote::{download_reference_data, Election};
+use std::fs::{self, File};
+use std::io::{Read, Write};
+use pasta_curves::Fp;
 use rocket_cors::{AllowedOrigins, CorsOptions};
-use vote_server::db::{create_db, get_ballot_bytes, store_ballot, DB_FILE};
+use vote_server::db::{create_db, get_ballot_bytes, store_ballot, DB_FILE, REFDATA_FILE};
 use vote_server::{execute, ELECTIONS};
 use vote_server::validate::validate;
 
@@ -24,16 +31,6 @@ use vote_server::validate::validate;
 fn nsm() -> String {
     serde_json::to_string(&ELECTIONS[&1]).unwrap()
 }
-
-// #[get("/devfund-props")]
-// fn devfund2() -> &'static str {
-//     ELECTION_STR2
-// }
-
-// #[get("/devfund-runoff")]
-// fn devfund3() -> &'static str {
-//     ELECTION_STR3
-// }
 
 #[put("/submit/<id>", data = "<input>")]
 fn submit(
@@ -83,6 +80,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 pub enum Command {
     StartServer,
     Validate { id: u32, filename: String },
+    CreateRefDatabase,
+    DownloadRefData { template_filename: String, lwd_url: String },
+    CreateElection { template_filename: String, election_filename: String },
 }
 
 async fn process_command(command: Command) -> Result<()> {
@@ -100,8 +100,55 @@ async fn process_command(command: Command) -> Result<()> {
                 hex::encode(ballot.sig_hash),
                 u32::from_le_bytes(ballot.candidate.try_into().unwrap()), ballot.amount);
         }
+        Command::CreateRefDatabase => {
+            let connection = Connection::open(REFDATA_FILE)?;
+            create_tables(&connection)?;
+        }
+        Command::DownloadRefData { template_filename, lwd_url } => {
+            let connection = Connection::open(REFDATA_FILE)?;
+            let election = load_election_template(&template_filename)?;
+            let (nfs, cmxs) = download_reference_data(&lwd_url, &election).await?;
+            store_refdata(&connection, &nfs, &cmxs)?;
+
+        }
+        Command::CreateElection { template_filename , election_filename } => {
+            let connection = Connection::open(REFDATA_FILE)?;
+            let mut s = connection.prepare("SELECT hash FROM cmxs")?;
+            let rows = s.query_map([], |r| r.get::<_, [u8; 32]>(0))?;
+            let cmxs = rows.collect::<Result<Vec<_>, _>>()?;
+            let (mut cmx_root, _) = calculate_merkle_paths(0, &[], &cmxs)?;
+            cmx_root.reverse();
+
+            let mut s = connection.prepare("SELECT hash FROM nullifiers")?;
+            let rows = s.query_map([], |r| {
+                let v = r.get::<_, [u8; 32]>(0)?;
+                let v = Fp::from_repr(v).unwrap();
+                Ok(v)
+            }
+            )?;
+            let mut nfs = rows.collect::<Result<Vec<_>, _>>()?;
+            nfs.sort();
+            let nf_tree = build_nfs_tree(&nfs)?;
+            let nfs = nf_tree.iter().map(|nf| nf.to_repr()).collect::<Vec<_>>();
+            let (mut nf_root, _) = calculate_merkle_paths(0, &[], &nfs)?;
+            nf_root.reverse();
+
+            let mut election = serde_json::from_reader::<_, Value,>(&File::open(&template_filename).unwrap())?;
+            election["cmx"] = Value::from(hex::encode(cmx_root));
+            election["nf"] = Value::from(hex::encode(nf_root));
+            let mut writer = File::create(&election_filename)?;
+            writeln!(&mut writer, "{}", serde_json::to_string_pretty(&election)?)?;
+        }
     }
     Ok(())
+}
+
+fn load_election_template(template_filename: &str) -> Result<Election> {
+    let mut file = fs::File::open(template_filename)?;
+    let mut template = String::new();
+    file.read_to_string(&mut template)?;
+    let election = serde_json::from_str::<Election>(&template)?;
+    Ok(election)
 }
 
 pub async fn cli_main() -> Result<()> {

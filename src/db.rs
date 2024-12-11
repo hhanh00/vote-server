@@ -5,6 +5,7 @@ use rusqlite::{params, Connection, OptionalExtension as _};
 use zcash_vote::{proof::ValidationResult, Election, Hash};
 
 pub const DB_FILE: &str = "vote.db";
+pub const REFDATA_FILE: &str = "refdata.db";
 
 pub fn create_db(connection: &Connection) -> Result<()> {
     connection.execute(
@@ -37,7 +38,7 @@ pub fn store_ballot(
     let db_tx = connection.transaction()?;
     let candidate = u32::from_le_bytes(ballot.candidate.clone().try_into().unwrap());
     db_tx.execute(
-        "INSERT INTO votes(id_election, sig_hash, amount, candidate, data) 
+        "INSERT INTO votes(id_election, sig_hash, amount, candidate, data)
     VALUES (?1, ?2, ?3, ?4, ?5)",
         params![
             election.id,
