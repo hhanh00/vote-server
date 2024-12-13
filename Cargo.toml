@@ -14,7 +14,7 @@ rocket = "0.5.1"
 rusqlite = { version = "0.29.0", features = ["bundled"] }
 r2d2_sqlite = "0.22"
 r2d2 = "0.8"
-zcash-vote = {git = "https://github.com/hhanh00/zcash-vote.git", rev="6242956"}
+zcash-vote = {git = "https://github.com/hhanh00/zcash-vote.git", rev="244c2e4"}
 flatbuffers = "24.3.7"
 serde_json = "1.0.115"
 hex = "0.4"
