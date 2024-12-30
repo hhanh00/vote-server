@@ -1,11 +1,13 @@
-name: Build vote-sever
+name: Build vote-server
 
 on:
+  workflow_dispatch:
+  pull_request:
   push:
-    branches: [ "main" ]
-
-env:
-  CARGO_TERM_COLOR: always
+    branches:
+      - ci
+    tags:
+      - "v*"
 
 jobs:
   build:
