@@ -16,8 +16,6 @@ use rocket::{
 };
 use rusqlite::Connection;
 use serde_json::Value;
-use zcash_vote::db::{create_tables, store_refdata};
-use zcash_vote::path::{build_nfs_tree, calculate_merkle_paths};
 use zcash_vote::{download_reference_data, Election};
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -40,9 +38,10 @@ fn submit(
 ) -> Result<String, Custom<String>> {
     execute!({
     let election = &ELECTIONS[&id];
-    let ballot = validate(&election, input)?;
-    let hash = store_ballot(&election, &ballot, input, pool)?;
-    Ok(hex::encode(&hash))
+    // let ballot = validate(&election, input)?;
+    // let hash = store_ballot(&election, &ballot, input, pool)?;
+    // Ok(hex::encode(&hash))
+    Ok(String::new())
 })
 }
 
@@ -95,49 +94,49 @@ async fn process_command(command: Command) -> Result<()> {
             let mut file = fs::File::open(&filename)?;
             let mut data = String::new();
             file.read_to_string(&mut data)?;
-            let ballot = validate(election, &hex::decode(data)?)?;
-            println!("hash: {}, candidate: {}, amount: {}",
-                hex::encode(ballot.sig_hash),
-                u32::from_le_bytes(ballot.candidate.try_into().unwrap()), ballot.amount);
+            // let ballot = validate(election, &hex::decode(data)?)?;
+            // println!("hash: {}, candidate: {}, amount: {}",
+            //     hex::encode(ballot.sig_hash),
+            //     u32::from_le_bytes(ballot.candidate.try_into().unwrap()), ballot.amount);
         }
         Command::CreateRefDatabase => {
             let connection = Connection::open(REFDATA_FILE)?;
-            create_tables(&connection)?;
+            // create_tables(&connection)?;
         }
         Command::DownloadRefData { template_filename, lwd_url } => {
             let connection = Connection::open(REFDATA_FILE)?;
             let election = load_election_template(&template_filename)?;
-            let (nfs, cmxs) = download_reference_data(&lwd_url, &election).await?;
-            store_refdata(&connection, &nfs, &cmxs)?;
+            // let (nfs, cmxs) = download_reference_data(&lwd_url, &election).await?;
+            // store_refdata(&connection, &nfs, &cmxs)?;
 
         }
         Command::CreateElection { template_filename , election_filename } => {
-            let connection = Connection::open(REFDATA_FILE)?;
-            let mut s = connection.prepare("SELECT hash FROM cmxs")?;
-            let rows = s.query_map([], |r| r.get::<_, [u8; 32]>(0))?;
-            let cmxs = rows.collect::<Result<Vec<_>, _>>()?;
-            let (mut cmx_root, _) = calculate_merkle_paths(0, &[], &cmxs)?;
-            cmx_root.reverse();
+            // let connection = Connection::open(REFDATA_FILE)?;
+            // let mut s = connection.prepare("SELECT hash FROM cmxs")?;
+            // let rows = s.query_map([], |r| r.get::<_, [u8; 32]>(0))?;
+            // let cmxs = rows.collect::<Result<Vec<_>, _>>()?;
+            // let (mut cmx_root, _) = calculate_merkle_paths(0, &[], &cmxs)?;
+            // cmx_root.reverse();
 
-            let mut s = connection.prepare("SELECT hash FROM nullifiers")?;
-            let rows = s.query_map([], |r| {
-                let v = r.get::<_, [u8; 32]>(0)?;
-                let v = Fp::from_repr(v).unwrap();
-                Ok(v)
-            }
-            )?;
-            let mut nfs = rows.collect::<Result<Vec<_>, _>>()?;
-            nfs.sort();
-            let nf_tree = build_nfs_tree(&nfs)?;
-            let nfs = nf_tree.iter().map(|nf| nf.to_repr()).collect::<Vec<_>>();
-            let (mut nf_root, _) = calculate_merkle_paths(0, &[], &nfs)?;
-            nf_root.reverse();
+            // let mut s = connection.prepare("SELECT hash FROM nullifiers")?;
+            // let rows = s.query_map([], |r| {
+            //     let v = r.get::<_, [u8; 32]>(0)?;
+            //     let v = Fp::from_repr(v).unwrap();
+            //     Ok(v)
+            // }
+            // )?;
+            // let mut nfs = rows.collect::<Result<Vec<_>, _>>()?;
+            // nfs.sort();
+            // let nf_tree = build_nfs_tree(&nfs)?;
+            // let nfs = nf_tree.iter().map(|nf| nf.to_repr()).collect::<Vec<_>>();
+            // let (mut nf_root, _) = calculate_merkle_paths(0, &[], &nfs)?;
+            // nf_root.reverse();
 
-            let mut election = serde_json::from_reader::<_, Value,>(&File::open(&template_filename).unwrap())?;
-            election["cmx"] = Value::from(hex::encode(cmx_root));
-            election["nf"] = Value::from(hex::encode(nf_root));
-            let mut writer = File::create(&election_filename)?;
-            writeln!(&mut writer, "{}", serde_json::to_string_pretty(&election)?)?;
+            // let mut election = serde_json::from_reader::<_, Value,>(&File::open(&template_filename).unwrap())?;
+            // election["cmx"] = Value::from(hex::encode(cmx_root));
+            // election["nf"] = Value::from(hex::encode(nf_root));
+            // let mut writer = File::create(&election_filename)?;
+            // writeln!(&mut writer, "{}", serde_json::to_string_pretty(&election)?)?;
         }
     }
     Ok(())
